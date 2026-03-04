@@ -280,7 +280,16 @@ const DOCKS: Record<ChatChannelId, ChannelDock> = {
       },
     },
   },
-  whatsapp: {
+      feishu: {
+      id: 'feishu',
+      capabilities: {
+        chatTypes: ['direct', 'group'],
+        reactions: true,
+        media: true,
+      },
+      outbound: DEFAULT_OUTBOUND_TEXT_CHUNK_LIMIT_4000,
+    },
+    whatsapp: {
     id: "whatsapp",
     capabilities: {
       chatTypes: ["direct", "group"],

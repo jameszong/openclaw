@@ -6,6 +6,7 @@ import type { ChannelId } from "./plugins/types.js";
 // register the plugin in its extension entrypoint and keep protocol IDs in sync.
 export const CHAT_CHANNEL_ORDER = [
   "telegram",
+  "feishu",
   "whatsapp",
   "discord",
   "irc",
@@ -36,6 +37,16 @@ const CHAT_CHANNEL_META: Record<ChatChannelId, ChannelMeta> = {
     selectionDocsPrefix: "",
     selectionDocsOmitLabel: true,
     selectionExtras: [WEBSITE_URL],
+  },
+  feishu: {
+    id: "feishu",
+    label: "Feishu",
+    selectionLabel: "Feishu (Bot)",
+    detailLabel: "Feishu Bot",
+    docsPath: "/channels/feishu",
+    docsLabel: "feishu",
+    blurb: "enterprise messaging channel.",
+    systemImage: "bubble.left.and.bubble.right",
   },
   whatsapp: {
     id: "whatsapp",

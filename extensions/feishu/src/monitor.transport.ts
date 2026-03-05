@@ -1,4 +1,5 @@
 import * as http from "http";
+import { Readable } from "stream";
 import * as Lark from "@larksuiteoapi/node-sdk";
 import {
   applyBasicWebhookRequestGuards,
@@ -116,15 +117,47 @@ export async function monitorWebhook({
       return;
     }
 
-    void Promise.resolve(webhookHandler(req, res))
-      .catch((err) => {
-        if (!guard.isTripped()) {
-          error(`feishu[${accountId}]: webhook handler error: ${String(err)}`);
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer) => chunks.push(chunk));
+    req.on("end", () => {
+      const bodyBuffer = Buffer.concat(chunks);
+
+      try {
+        const bodyStr = bodyBuffer.toString("utf8");
+        const bodyJson = JSON.parse(bodyStr);
+        // Intercept url_verification challenge before passing to Lark SDK
+        if (bodyJson && bodyJson.type === "url_verification" && bodyJson.challenge) {
+          log(`feishu[${accountId}]: received url_verification challenge, responding with 200`);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ challenge: bodyJson.challenge }));
+          guard.dispose();
+          return;
         }
-      })
-      .finally(() => {
-        guard.dispose();
-      });
+      } catch (e) {
+        // Ignore parse errors, let Lark SDK handle them
+      }
+
+      // Reconstruct the request stream for Lark SDK since we consumed it
+      const fakeReq = Object.assign(
+        new Readable({
+          read() {
+            this.push(bodyBuffer);
+            this.push(null);
+          },
+        }),
+        req
+      ) as http.IncomingMessage;
+
+      void Promise.resolve(webhookHandler(fakeReq, res))
+        .catch((err) => {
+          if (!guard.isTripped()) {
+            error(`feishu[${accountId}]: webhook handler error: ${String(err)}`);
+          }
+        })
+        .finally(() => {
+          guard.dispose();
+        });
+    });
   });
 
   httpServers.set(accountId, server);

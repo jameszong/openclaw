@@ -5,6 +5,7 @@ import type {
   ChannelUiMetaEntry,
   ChannelsStatusSnapshot,
   DiscordStatus,
+  FeishuStatus,
   GoogleChatStatus,
   IMessageStatus,
   NostrProfile,
@@ -16,6 +17,7 @@ import type {
 } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
 import { renderDiscordCard } from "./channels.discord.ts";
+import { renderFeishuCard } from "./channels.feishu.ts";
 import { renderGoogleChatCard } from "./channels.googlechat.ts";
 import { renderIMessageCard } from "./channels.imessage.ts";
 import { renderNostrCard } from "./channels.nostr.ts";
@@ -28,6 +30,7 @@ import { renderWhatsAppCard } from "./channels.whatsapp.ts";
 
 export function renderChannels(props: ChannelsProps) {
   const channels = props.snapshot?.channels as Record<string, unknown> | null;
+  const feishu = (channels?.feishu ?? null) as FeishuStatus | null;
   const whatsapp = (channels?.whatsapp ?? undefined) as WhatsAppStatus | undefined;
   const telegram = (channels?.telegram ?? undefined) as TelegramStatus | undefined;
   const discord = (channels?.discord ?? null) as DiscordStatus | null;
@@ -54,6 +57,7 @@ export function renderChannels(props: ChannelsProps) {
     <section class="grid grid-cols-2">
       ${orderedChannels.map((channel) =>
         renderChannel(channel.key, props, {
+          feishu,
           whatsapp,
           telegram,
           discord,
@@ -96,12 +100,19 @@ function resolveChannelOrder(snapshot: ChannelsStatusSnapshot | null): ChannelKe
   if (snapshot?.channelOrder?.length) {
     return snapshot.channelOrder;
   }
-  return ["whatsapp", "telegram", "discord", "googlechat", "slack", "signal", "imessage", "nostr"];
+  return ["feishu", "whatsapp", "telegram", "discord", "googlechat", "slack", "signal", "imessage", "nostr"];
 }
 
 function renderChannel(key: ChannelKey, props: ChannelsProps, data: ChannelsChannelData) {
   const accountCountLabel = renderChannelAccountCount(key, data.channelAccounts);
   switch (key) {
+    case "feishu":
+      return renderFeishuCard({
+        props,
+        feishu: data.feishu ?? undefined,
+        feishuAccounts: data.channelAccounts?.feishu ?? [],
+        accountCountLabel,
+      });
     case "whatsapp":
       return renderWhatsAppCard({
         props,
@@ -323,3 +334,4 @@ function renderGenericAccount(account: ChannelAccountSnapshot) {
     </div>
   `;
 }
+
